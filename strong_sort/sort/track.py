@@ -101,6 +101,8 @@ class Track:
         ret = self.mean[:4].copy()
         ret[2] *= ret[3]
         ret[:2] -= ret[2:] / 2
+
+        #print('ret : ', ret)
         return ret
 
     def to_tlbr(self):
