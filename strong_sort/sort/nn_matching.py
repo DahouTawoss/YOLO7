@@ -2,8 +2,9 @@
 import numpy as np
 import sys
 import torch
+from torchreid.reid.metrics.distance import compute_distance_matrix
+
 sys.path.append('strong_sort/deep/reid')
-from torchreid.metrics.distance import compute_distance_matrix
 
 
 def _pdist(a, b):
@@ -86,10 +87,16 @@ def _nn_cosine_distance(x, y):
         A vector of length M that contains for each entry in `y` the
         smallest cosine distance to a sample in `x`.
     """
+
+
     x_ = torch.from_numpy(np.asarray(x))
     y_ = torch.from_numpy(np.asarray(y))
+    #print('\n****************in nn cosine distance**************\n')
     distances = compute_distance_matrix(x_, y_, metric='cosine')
+
+    #print('distances : ', distances)
     distances = distances.cpu().detach().numpy()
+    #print('=============min distance : ', distances.min(axis=0))
     return distances.min(axis=0)
 
 
