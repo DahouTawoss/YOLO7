@@ -121,7 +121,7 @@ def matching_cascade(
     ]
     matches_l, _, unmatched_detections = \
         min_cost_matching(
-            distance_metric, max_distance, tracks, detections,
+            distance_metric, max_distance, tracks, detections, # max dist = 0.7 (class strong_sort)
             track_indices_l, unmatched_detections)
     matches += matches_l
     unmatched_tracks = list(set(track_indices) - set(k for k, _ in matches))
