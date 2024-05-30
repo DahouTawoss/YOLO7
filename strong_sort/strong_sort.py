@@ -9,10 +9,7 @@ import torchvision.transforms as transforms
 from .sort.nn_matching import NearestNeighborDistanceMetric
 from .sort.detection import Detection
 from .sort.tracker import Tracker
-from .deep.reid_model_factory import show_downloadeable_models, get_model_url, get_model_name
 
-from torchreid.utils import FeatureExtractor
-from torchreid.utils.tools import download_url
 from .reid_multibackend import ReIDDetectMultiBackend
 
 __all__ = ['StrongSORT']
@@ -25,15 +22,14 @@ class StrongSORT(object):
                  fp16,
                  max_dist=0.2,
                  max_iou_distance=0.7,
-                 max_age=70, n_init=3,
+                 max_age=500, n_init=3,
                  nn_budget=100,
                  mc_lambda=0.995,
                  ema_alpha=0.9
                 ):
         
         self.model = ReIDDetectMultiBackend(weights=model_weights, device=device, fp16=fp16)
-
-
+        
         self.max_dist = max_dist
         metric = NearestNeighborDistanceMetric(
             "cosine", self.max_dist, nn_budget)
@@ -44,13 +40,10 @@ class StrongSORT(object):
         self.height, self.width = ori_img.shape[:2]
         # generate detections
         features = self._get_features(bbox_xywh, ori_img)
+        #print('features : ', features)
         bbox_tlwh = self._xywh_to_tlwh(bbox_xywh)
         detections = [Detection(bbox_tlwh[i], conf, features[i]) for i, conf in enumerate(
             confidences)]
-
-        # run on non-maximum supression
-        boxes = np.array([d.tlwh for d in detections])
-        scores = np.array([d.confidence for d in detections])
 
         # update tracker
         self.tracker.predict()
@@ -58,7 +51,9 @@ class StrongSORT(object):
 
         # output bbox identities
         outputs = []
+
         for track in self.tracker.tracks:
+            #print('track : ', track)
             if not track.is_confirmed() or track.time_since_update > 1:
                 continue
 
@@ -121,14 +116,58 @@ class StrongSORT(object):
         h = int(y2 - y1)
         return t, l, w, h
 
+    def _get_features2(self, bbox_xywh, ori_img):
+        im_crops = []
+        for box in bbox_xywh:
+            x1, y1, x2, y2 = self._xywh_to_xyxy(box)
+            im = ori_img[y1:y2, x1:x2]
+
+            im_crops.append(im)
+        if im_crops:
+            features = self.model(im_crops)
+        else:
+            features = np.array([])
+        return features
+
+
     def _get_features(self, bbox_xywh, ori_img):
         im_crops = []
         for box in bbox_xywh:
             x1, y1, x2, y2 = self._xywh_to_xyxy(box)
             im = ori_img[y1:y2, x1:x2]
+
+            gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+
+            corners = cv2.cornerHarris(gray, blockSize=2, ksize=3, k=0.04)
+
+            im[corners > 0.01 * corners.max()] = [0, 0, 255]
             im_crops.append(im)
+
         if im_crops:
             features = self.model(im_crops)
+        else:
+            features = np.array([])
+        return features
+
+    def _get_features_s(self, bbox_xywh, ori_img):
+        im_crops = []
+        for box in bbox_xywh:
+            x1, y1, x2, y2 = self._xywh_to_xyxy(box)
+            im = ori_img[y1:y2, x1:x2]
+
+            gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+
+            sift = cv2.xfeatures2d.SIFT_create()
+
+            keypoints, descriptors = sift.detectAndCompute(gray, None)
+
+            im_with_keypoints = cv2.drawKeypoints(im, keypoints, None)
+
+            im_crops.append(im_with_keypoints)
+
+        if im_crops:
+            features = self.model(im_crops)
+
         else:
             features = np.array([])
         return features
