@@ -249,8 +249,8 @@ def evaluate_tracking(sequences, track_dir, gt_dir):
     for seqname in sequences:
         print('sqname :',seqname)
 
-        track_res = os.path.join(track_dir, seqname, 'res.txt')
-        gt_file = os.path.join(gt_dir, seqname, 'gt.txt')
+        track_res = track_dir
+        gt_file = gt_dir
         assert os.path.exists(track_res) and os.path.exists(gt_file), \
             'Either tracking result {} or '\
             'groundtruth directory {} does not exist'.format(
