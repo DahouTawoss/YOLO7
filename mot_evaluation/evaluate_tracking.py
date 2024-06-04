@@ -54,8 +54,7 @@ def preprocessingDB(trackDB, gtDB, distractor_ids, iou_thres, minvis):
         gt_num = gt_in_frame.shape[0]
         overlaps = np.zeros((res_num, gt_num), dtype=float)
         for gid in range(gt_num):
-            print('results ',res_in_frame_data[:, 2:6])
-            print('ground truths ', gt_in_frame_data[gid, 2:6])
+        
             overlaps[:, gid] = bbox_overlap(
                 res_in_frame_data[:, 2:6], gt_in_frame_data[gid, 2:6])
         matched_indices = linear_assignment(1 - overlaps)
