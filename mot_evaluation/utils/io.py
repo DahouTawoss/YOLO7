@@ -35,11 +35,8 @@ def read_txt_to_struct(fname):
     with open(fname, 'r') as fid:
         lines = fid.readlines()
         for line in lines:
-            print(line)
-            if ',' in line :
-                line = list(map(float, line.strip().split(',')))
-            else:
-                line = list(map(float, line.strip().split(' ')))
+            line = list(map(float, line.strip().split(',')))
+            
             data.append(line)
     data = np.array(data)
     # change point-size format to two-points format
